@@ -60,6 +60,11 @@
 
       return this
     }
+  , __resetCellPadding: function(cell) {
+      if (typeof cell != "undefined") {
+        cell.css('padding', cell.data('padding'))
+      }
+    }
   , __commitEditorChange: function() {
       var parentCell = typeof this.$editor != "undefined" ? this.$editor.el.parents('td:eq(0)') : undefined
 
@@ -75,12 +80,23 @@
           $.proxy(this.$editor.onChange, this.$editor.el, parentCell)()
         }
 
-        // Reset cell padding
-        parentCell.css('padding', parentCell.data('padding'))
+        this.__resetCellPadding(parentCell)
       }
     }
   , __clearEditor: function() {
-      this.$table.find('.datagrid-input-container').remove()
+      var parentCell = typeof this.$editor != "undefined" ? this.$editor.el.parents('td:eq(0)') : undefined
+
+      if (!parentCell && typeof this.$cell != 'undefined') {
+        parentCell = this.$cell
+      }
+
+      if (!!parentCell && typeof this.$editor != "undefined") {
+        // Reset cell padding
+        this.__resetCellPadding(parentCell)
+        
+        parentCell.parents('table:eq(0)').find('.datagrid-input-container').remove()
+        this.$editor = undefined
+      }
     }
 
   , __getCellInfo: function(e) {
@@ -114,12 +130,6 @@
           $(document).data('active-datagrid', this)
 
           this.$cell = $(e.currentTarget)
-
-          if (typeof this.$cell != "undefined" && this.$cell[0].tagName == 'TD') {
-            // Reconfigure td padding
-            this.$cell.data('padding', this.$cell.css('padding'))
-            this.$cell.css('padding', 0)
-          }
         }
       }
 
@@ -127,7 +137,12 @@
         this.$cell = this.$editor.el.parents('td:eq(0)')
       }
 
-      if (!!this.$cell) {
+      if (!!this.$cell && this.$cell[0].tagName == 'TD') {
+        // Reconfigure td padding
+        this.__resetCellPadding(this.$cell)
+        this.$cell.data('padding', this.$cell.css('padding'))
+        
+
         // Set cell type, offset and dimension
         this.$cellType = !!this.$cell.data('type') && !!this.$inputs[this.$cell.data('type')]
                         ? this.$cell.data('type') : 'text'
@@ -150,7 +165,8 @@
       } else if (this.$cell.data('editable') == false) {
         this.commit().clean()
         e.preventDefault()
-      } else if (typeof this.$cell != "undefined" && this.$cell[0].tagName == 'TD') {
+      } else if (typeof this.$cell != "undefined" && this.$cell[0].tagName == 'TD'
+        && e.type == 'click') {
         var input = this.$inputs[this.$cellType]
         var inputContainer = $('<div class="datagrid-input-container"><div class="datagrid-input-wrapper"></div></div>')
 
@@ -172,6 +188,7 @@
 
         // Display the input
         inputContainer.find('.datagrid-input-wrapper').html(input.el)
+        inputContainer.parents('td:eq(0)').css('padding', 0)
 
         input.el.focus()
 
@@ -232,12 +249,16 @@
             break
 
           case 13: // enter
-          case 27: // escape
             // Exit editing mode
             this.commit().clean()
 
             blocked = true
             break
+
+          case 27: // escape
+            this.clean()
+            blocked = true
+            break;
 
           default:
             blocked = false
