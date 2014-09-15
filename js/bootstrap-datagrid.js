@@ -88,7 +88,7 @@
         if (invoke == true) {
           $.proxy(input.onShow, input.el, this.$cell)()
         } else {
-          currentValue = input.el.val()
+          var currentValue = input.el.val()
           $.proxy(input.onShow, input.el, this.$cell)()
           input.el.val(currentValue)
         }
@@ -240,12 +240,15 @@
             break
 
           case 9: // tab
+            // Save previous cell before it being destroyed
+            var previousCell = this.$cell
+
             // Commit and clear the editor
             this.commit().clean()
 
             // Activate the editor on next closest sibling
-            var currentIndex = this.$cell.index(),
-                parentRow = this.$cell.parents('tr:eq(0)'),
+            var currentIndex = previousCell.index(),
+                parentRow = previousCell.parents('tr:eq(0)'),
                 nextRow = parentRow.next('tr'),
                 nextCell = undefined
 
