@@ -65,6 +65,36 @@
         cell.css('padding', cell.data('padding'))
       }
     }
+
+  , __resetEditorPadding: function(inputContainer, input) {
+      var invoke = true
+      if ((typeof inputContainer == "undefined" || typeof input == "undefined")
+        && typeof this.$editor != "undefined") {
+        input = this.$editor,
+        inputContainer = input.el.parents('.datagrid-input-container')
+        invoke = false
+      }
+
+      if (!!inputContainer && !!input) {
+        inputContainer.css('position', 'absolute')
+        inputContainer.css('z-index', 999)
+        inputContainer.css('width', this.$cellDimension.width)
+        inputContainer.css('height', this.$cellDimension.height)
+        inputContainer.css('top', this.$cellOffset.top.toString+'px')
+        inputContainer.css('left', this.$cellOffset.left.toString+'px')
+        inputContainer.css('margin', 0)
+
+        // Call the show event of the input
+        if (invoke == true) {
+          $.proxy(input.onShow, input.el, this.$cell)()
+        } else {
+          currentValue = input.el.val()
+          $.proxy(input.onShow, input.el, this.$cell)()
+          input.el.val(currentValue)
+        }
+      }
+    }
+
   , __commitEditorChange: function() {
       var parentCell = typeof this.$editor != "undefined" ? this.$editor.el.parents('td:eq(0)') : undefined
 
@@ -96,6 +126,7 @@
         
         parentCell.parents('table:eq(0)').find('.datagrid-input-container').remove()
         this.$editor = undefined
+        this.$cell = undefined
       }
     }
 
@@ -114,6 +145,7 @@
         } else {
           // Do not trigger full commit cycle
           this.__commitEditorChange()
+          this.__resetCellPadding()
         }
 
         // Get current cell padding
@@ -141,7 +173,8 @@
         // Reconfigure td padding
         this.__resetCellPadding(this.$cell)
         this.$cell.data('padding', this.$cell.css('padding'))
-        
+
+        this.$cell.css('padding', 0)
 
         // Set cell type, offset and dimension
         this.$cellType = !!this.$cell.data('type') && !!this.$inputs[this.$cell.data('type')]
@@ -149,6 +182,8 @@
         this.$cellOffset = this.$cell.offset()
         this.$cellDimension.width = this.$cell.width()
         this.$cellDimension.height = this.$cell.height()
+
+        this.__resetEditorPadding()
       }
 
       return this
@@ -175,16 +210,7 @@
 
         // Attach selected input above the cell
         this.$cell.prepend(inputContainer)
-        inputContainer.css('position', 'absolute')
-        inputContainer.css('z-index', 999)
-        inputContainer.css('width', this.$cellDimension.width)
-        inputContainer.css('height', this.$cellDimension.height)
-        inputContainer.css('top', this.$cellOffset.top.toString+'px')
-        inputContainer.css('left', this.$cellOffset.left.toString+'px')
-        inputContainer.css('margin', 0)
-
-        // Call the show event of the input
-        $.proxy(input.onShow, input.el, this.$cell)()
+        this.__resetEditorPadding(inputContainer, input)
 
         // Display the input
         inputContainer.find('.datagrid-input-wrapper').html(input.el)
