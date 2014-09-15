@@ -1,6 +1,6 @@
 {
   "name": "bootstrap-datagrid",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "main": ["./js/bootstrap-datagrid.js"],
   "dependencies": {
     "bootstrap": "~3.1.1"
