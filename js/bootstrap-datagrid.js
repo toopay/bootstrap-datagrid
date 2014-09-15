@@ -44,9 +44,9 @@
 
     constructor: Datagrid
 
-  , __setListener: function() {
+  , __setListener: function(force) {
       // Set editable routines
-      if (this.$options.editable == true) {
+      if (this.$options.editable == true || !!force) {
         this.$table.find('td').on('click', $.proxy(this.__setEditableInput, this))
         $(window).on('resize', $.proxy(this.__setEditableInput, this))
       }
@@ -175,8 +175,8 @@
       }
     }
 
-  , boot: function() {
-      this.__setListener()
+  , boot: function(force) {
+      this.__setListener(force)
 
       return this
     }
