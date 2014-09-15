@@ -47,8 +47,19 @@
   , __setListener: function(force) {
       // Set editable routines
       if (this.$options.editable == true || !!force) {
+        // Check for click on cell
         this.$table.find('td').on('click', $.proxy(this.__setEditableInput, this))
+
+        // Detect window resize
         $(window).on('resize', $.proxy(this.__setEditableInput, this))
+
+        // Detect outside click(s)
+        var that = this
+        $(document).click(function(e) { 
+          if(!$(e.target).closest('table').length) {
+            that.$table.data('datagrid').commit().clean()
+          }        
+        })
       }
 
       // Re-attach datagrid data
@@ -70,12 +81,22 @@
       }
     }
   , __clearEditor: function() {
-      $('.datagrid-input-container').remove()
+      this.$table.find('.datagrid-input-container').remove()
     }
 
   , __getCellInfo: function(e) {
       if (e.currentTarget.tagName == 'TD' || typeof this.$cell == 'undefined') {
-        this.commit()
+        if (e.type == 'click' && 
+          typeof this.$editor != 'undefined' && 
+          typeof e.originalEvent != 'undefined' &&
+          !$(e.currentTarget).is(this.$cell)) {
+          // Trigger commit event for appropriate event
+          this.commit()
+          this.clean()
+        } else {
+          // Do not trigger full commit cycle
+          this.__commitEditorChange()
+        }
 
         // Get current cell padding
         this.$cell = $(e.currentTarget)
@@ -96,32 +117,39 @@
   , __setEditableInput: function(e) {
       this.__getCellInfo(e)
 
-      var input = this.$inputs[this.$cellType]
-      var inputContainer = $('<div class="datagrid-input-container"><div class="datagrid-input-wrapper"></div></div>')
+      if (e.type == 'click' && 
+          typeof e.originalEvent != 'undefined' &&
+          !$(e.currentTarget).is(this.$cell)) {
+        // Ignore invalid event
+        e.preventDefault()
+      } else {
+        var input = this.$inputs[this.$cellType]
+        var inputContainer = $('<div class="datagrid-input-container"><div class="datagrid-input-wrapper"></div></div>')
 
-      // First of, destroy all known inputs and reset cell padding
-      this.__clearEditor()
+        // First of, destroy all known inputs and reset cell padding
+        this.__clearEditor()
 
-      // Attach selected input above the cell
-      this.$cell.prepend(inputContainer)
-      inputContainer.css('position', 'absolute')
-      inputContainer.css('z-index', 999)
-      inputContainer.css('width', this.$cellDimension.width)
-      inputContainer.css('height', this.$cellDimension.height)
-      inputContainer.css('top', this.$cellOffset.top.toString+'px')
-      inputContainer.css('left', this.$cellOffset.left.toString+'px')
-      inputContainer.css('margin', 0)
+        // Attach selected input above the cell
+        this.$cell.prepend(inputContainer)
+        inputContainer.css('position', 'absolute')
+        inputContainer.css('z-index', 999)
+        inputContainer.css('width', this.$cellDimension.width)
+        inputContainer.css('height', this.$cellDimension.height)
+        inputContainer.css('top', this.$cellOffset.top.toString+'px')
+        inputContainer.css('left', this.$cellOffset.left.toString+'px')
+        inputContainer.css('margin', 0)
 
-      // Call the show event of the input
-      $.proxy(input.onShow, input.el, this.$cell)()
+        // Call the show event of the input
+        $.proxy(input.onShow, input.el, this.$cell)()
 
-      // Display the input
-      inputContainer.find('.datagrid-input-wrapper').html(input.el)
+        // Display the input
+        inputContainer.find('.datagrid-input-wrapper').html(input.el)
 
-      input.el.focus()
+        input.el.focus()
 
-      this.$editor = input
-      this.$editor.el.on('keydown', $.proxy(this.__handleKeydown, this))
+        this.$editor = input
+        this.$editor.el.on('keydown', $.proxy(this.__handleKeydown, this))
+      }
 
       return this
     }
@@ -182,8 +210,8 @@
       return this
     }
   , commit: function() {
-      this.__commitEditorChange()
       this.$options.onCommit(this)
+      this.__commitEditorChange()
 
       return this
     }
@@ -269,13 +297,6 @@
       $('table[data-provide="datagrid"]').each(function(){
         initDatagrid($(this))
       })
-    })
-    .click(function(e) { 
-      if(!$(e.target).closest('table[data-provide="datagrid"]').length) {
-        $('table[data-provide="datagrid"]').each(function(){
-          $(this).data('datagrid').commit().clean()
-        })
-      }        
     })
 
 }(window.jQuery);
