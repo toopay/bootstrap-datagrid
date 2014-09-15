@@ -1,5 +1,5 @@
 /* ===================================================
- * bootstrap-datagrid.js v1.0.0
+ * bootstrap-datagrid.js v0.1.0
  * http://github.com/toopay/bootstrap-datagrid
  * ===================================================
  * Copyright 2013-2014 Taufan Aditya
