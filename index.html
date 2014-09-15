@@ -162,16 +162,148 @@
             </tbody>
           </table>
           <br/>
-          <button id="datagrid-triger-init" class="btn btn-primary">Transform into Bootstrap-Datagrid</button>
+          <button id="datagrid-triger-init" class="btn btn-primary">Transform into <strong>Bootstrap-Datagrid</strong></button>
         </div>
 
+    <h3>Inputs</h3>
+    <p>By default, <strong>Bootstrap-Datagrid</strong> assume all editable cell(s) are text-based. However, its a breeze to support other input types. You can simply define your own input type and how you want it to interact with the overall cycle. Heres an example of custom inputs:</p>
+      <div class="well">
+    <h5>Code</h5>
+    <pre class="prettyprint">// Html
+&lt;table class=&quot;table&quot; id=&quot;custom-table&quot;&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;#&lt;/th&gt;
+      &lt;th&gt;Item Name&lt;/th&gt;
+      &lt;th&gt;Item Category&lt;/th&gt;
+      &lt;th&gt;Price&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr class=&quot;active&quot;&gt;
+      &lt;td data-editable=&quot;false&quot;&gt;1&lt;/td&gt;
+      &lt;td&gt;Nike&lt;/td&gt;
+      &lt;td data-type=&quot;select&quot; data-value=&quot;shoe&quot;&gt;Shoe&lt;/td&gt;
+      &lt;td data-type=&quot;money&quot; data-value=&quot;49&quot;&gt;$49&lt;/td&gt;
+    &lt;/tr&gt;
+    //...
+  &lt;/tbody&gt;
+&lt;/table&gt;
 
+// Script
+$('#custom-table').datagrid({
+  inputs: {
+      select: {
+        el : $('&lt;select class=&quot;form-control datagrid-input&quot;&gt;'),
+        onShow:function(cell) {
+          // Set the options
+          if (!$(this).find('option').length) {
+            $(this).append($('&lt;option disabled=&quot;disabled&quot;&gt;Select a category&lt;/option&gt;'))
+            $(this).append($('&lt;option value=&quot;shoe&quot;&gt;Shoe&lt;/option&gt;'))
+            $(this).append($('&lt;option value=&quot;t-shirt&quot;&gt;T-Shirt&lt;/option&gt;'))
+            $(this).append($('&lt;option value=&quot;pants&quot;&gt;Pants&lt;/option&gt;'))
+          }
+
+          var inputPadding = parseInt(cell.data('padding'))-1
+          $(this).css('padding', inputPadding+'px')
+          $(this).css('width', '100%')
+          $(this).css('height', '100%')
+          $(this).css('top', cell.offset().top.toString+'px')
+          $(this).css('left', cell.offset().left.toString+'px')
+
+          $(this).val(cell.data('value'))
+        },
+        onChange:function(cell) {
+          cell.data('value', $(this).val())
+          cell.text($(this).find('option[value='+$(this).val()+']').text())
+        },
+        isChanged:function(cell) {
+          return $(this).val() != cell.data('value')
+        }
+      },
+      money: {
+        el : $('&lt;input type=&quot;text&quot; class=&quot;form-control datagrid-input&quot;&gt;'),
+        onShow:function(cell) {
+          var inputPadding = parseInt(cell.data('padding'))-1
+          $(this).css('padding', inputPadding+'px')
+          $(this).css('width', '100%')
+          $(this).css('height', '100%')
+          $(this).css('top', cell.offset().top.toString+'px')
+          $(this).css('left', cell.offset().left.toString+'px')
+
+          $(this).val(cell.data('value'))
+        },
+        onChange:function(cell) {
+          cell.data('value', $(this).val())
+          cell.text('$'+$(this).val())
+        },
+        isChanged:function(cell) {
+          return $(this).val() != cell.data('value')
+        }
+      }
+    }
+  })</pre>
+        </div>
+      <div class="well">
+        <h5>Result</h5>
+          <table class="table" id="custom-table">
+            <thead>
+              <tr>
+                <th>#ID</th>
+                <th>Item Name</th>
+                <th>Item Category</th>
+                <th>Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="active">
+                <td data-editable="false">1</td>
+                <td>Nike</td>
+                <td data-type="select" data-value="shoe">Shoe</td>
+                <td data-type="money" data-value="49">$49</td>
+              </tr>
+              <tr>
+                <td data-editable="false">2</td>
+                <td>Adidas</td>
+                <td data-type="select" data-value="shoe">Shoe</td>
+                <td data-type="money" data-value="49">$49</td>
+              </tr>
+              <tr>
+                <td data-editable="false">3</td>
+                <td>GT Man</td>
+                <td data-type="select" data-value="pants">Pants</td>
+                <td data-type="money" data-value="10">$10</td>
+              </tr>
+              <tr>
+                <td data-editable="false">4</td>
+                <td>Volcom</td>
+                <td data-type="select" data-value="t-shirt">T-Shirt</td>
+                <td data-type="money" data-value="25">$25</td>
+              </tr>
+            </tbody>
+          </table>
+          <br/>
+        </div>
+      <p>There are only 5 part(s) you need to concern about when you're defining your own input within <code>inputs</code> options.</p>
+      <ol>
+        <li><strong>Input name</strong> obviously. In above example, we add two new input types, which are <code>select</code> and <code>money</code>. The default input type was <code>text</code></li>
+        <li><code>el</code> (element) of your input. This parameter accepting regular jQuery selector as an argument.</li>
+        <li><code>onShow</code> event. <strong>Bootstrap-Datagrid</strong> will send <code>cell</code> element each time it constructing the input, so you can match your input aspect (offset, selected value, etc). Here you can also, for example, mutate the label with the value.</li>
+        <li><code>isChanged</code> event. Right before <strong>Bootstrap-Datagrid</strong> trying to commit and clean any changes on datagrid element, it will need to determine whether last active cell are changed or not. In this callback, you need to return <code>bool</code> value to tell the cell state</li>
+        <li><code>onChange</code> event. After <strong>Bootstrap-Datagrid</strong> know the state of the active cell, it will fired this event when it detect value changes. Here you can, for example, saving the data and/or formatting the cell text based by selected value.</li>
+      </ol>
+
+      <div class="alert alert-info">
+          <strong>NOTE</strong>
+          <p>By default, all cell(s) are editable, but to disable some cell(s), all you have to do just setting <code>data-editable</code> to false within the <code>td</code> element (see above example).</p>
+          <p>Globally, you also can pass <code>editable: false</code> as part as datagrid option to construct the datagrid object without making all cell(s) instantly editable. Which you can enable later on using <code>$('#some-table-selector').data('datagrid').boot()</code></p>
+      </div>
     </section>
     </div>
     <!-- FOOTER  -->
     <div id="footer_wrap" class="outer">
       <footer class="inner">
-        <p class="copyright"><strong>Bootstrap-datagrid</strong> maintained by <a href="https://github.com/toopay">toopay</a></p>
+        <p class="copyright"><strong>Bootstrap-Datagrid</strong> maintained by <a href="https://github.com/toopay">toopay</a></p>
       </footer>
     </div>
 

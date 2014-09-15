@@ -28,6 +28,7 @@
   var Datagrid = function (element, options) {
     // Class Properties
     this.$ns             = 'bootstrap-datagrid'
+    this.$booted         = false
     this.$table          = $(element)
     this.$options        = $.extend(true, {}, $.fn.datagrid.defaults, options, this.$table.data(), this.$table.data('options'))
     this.$inputs         = $.extend(true, {}, $.fn.datagrid.defaults.inputs, options.inputs)
@@ -57,7 +58,12 @@
         var that = this
         $(document).click(function(e) { 
           if(!$(e.target).closest('table').length) {
-            that.$table.data('datagrid').commit().clean()
+            $('table').each(function(i,tableEl){
+              if (!!$(tableEl).data('datagrid') &&
+                  $(tableEl).find('.datagrid-input-container').length) {
+                $(tableEl).data('datagrid').commit().clean()
+              }
+            })
           }        
         })
       }
@@ -69,9 +75,10 @@
     }
   , __commitEditorChange: function() {
       if (typeof this.$cell != 'undefined') {
-        var isChange = $.proxy(this.$editor.isChange, this.$editor.el, this.$cell)()
+        var isChanged = $.proxy(this.$editor.isChanged, this.$editor.el, this.$cell)()
 
-        if (!!this.$editor.el.val() && isChange) {
+        if (!!this.$editor.el.val() && isChanged) {
+          console.log('here',isChanged,this.$editor.el.val(),this.$cell)
           // Call the cell mutator
           $.proxy(this.$editor.onChange, this.$editor.el, this.$cell)()
         }
@@ -99,9 +106,13 @@
         }
 
         // Get current cell padding
-        this.$cell = $(e.currentTarget)
-        this.$cell.data('padding', this.$cell.css('padding'))
-        this.$cell.css('padding', 0)
+        if (typeof $(e.currentTarget).data('editable') == "undefined" ||
+          $(e.currentTarget).data('editable') == true) {
+          this.$cell = $(e.currentTarget)
+
+          this.$cell.data('padding', this.$cell.css('padding'))
+          this.$cell.css('padding', 0)
+        }
       }
 
       // Set cell type, offset and dimension
@@ -121,6 +132,9 @@
           typeof e.originalEvent != 'undefined' &&
           !$(e.currentTarget).is(this.$cell)) {
         // Ignore invalid event
+        e.preventDefault()
+      } else if (this.$cell.data('editable') == false) {
+        this.commit().clean()
         e.preventDefault()
       } else {
         var input = this.$inputs[this.$cellType]
@@ -170,8 +184,7 @@
 
           case 9: // tab
             // Commit and clear the editor
-            this.commit()
-            this.clean()
+            this.commit().clean()
 
             // Activate the editor on next closest sibling
             var nextCell = this.$cell.next('td')
@@ -186,8 +199,7 @@
           case 13: // enter
           case 27: // escape
             // Exit editing mode
-            this.commit()
-            this.clean()
+            this.commit().clean()
 
             blocked = true
             break
@@ -204,8 +216,10 @@
     }
 
   , boot: function(force) {
-      this.__setListener(force)
-      this.$options.onBoot(this)
+      if (this.$booted == false) {
+        this.__setListener(force)
+        this.$options.onBoot(this)
+      }
 
       return this
     }
@@ -260,7 +274,7 @@
         onChange:function(cell) {
           cell.text($(this).val())
         },
-        isChange:function(cell) {
+        isChanged:function(cell) {
           return $(this).val() != cell.text()
         }
       }
@@ -283,10 +297,7 @@
   var initDatagrid = function(el) {
     var $this = el
 
-    if ($this.data('datagrid')) {
-      $this.data('datagrid').boot()
-      return
-    }
+    if ($this.data('datagrid')) return
 
     $this.datagrid()
   }
