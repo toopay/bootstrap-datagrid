@@ -8,7 +8,6 @@
 
     <link rel="stylesheet" type="text/css" media="screen" href="css/stylesheet.css">
     <link rel="stylesheet" type="text/css" media="screen" href="css/bootstrap.min.css">
-    <link rel="stylesheet" type="text/css" media="screen" href="css/bootstrap-datagrid.min.css">
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css">
     <link rel="shortcut icon" href="img/favicon.png">
 
@@ -35,43 +34,140 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        <table class="table table-bordered" data-provide="datagrid">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>First Name</th>
-              <th>Last Name</th>
-              <th>Username</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td rowspan="2">1</td>
-              <td>Mark</td>
-              <td>Otto</td>
-              <td>@mdo</td>
-            </tr>
-            <tr>
-              <td>Mark</td>
-              <td>Otto</td>
-              <td>@TwBootstrap</td>
-            </tr>
-            <tr>
-              <td>2</td>
-              <td>Jacob</td>
-              <td>Thornton</td>
-              <td>@fat</td>
-            </tr>
-            <tr>
-              <td>3</td>
-              <td colspan="2">Larry the Bird</td>
-              <td>@twitter</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-    </div>
+        <h2>Simple datagrid table component that useful!</h2>
+        <p><strong>Bootstrap-Datagrid</strong> designed to be easily integrated with your bootstrap project. It exposes useful API that allow you to fully hook-in into the plugin</p>
 
+        <hr/>
+
+        <h1>Markup</h1>
+        <p>Switch regular table within your page into <strong>Bootstrap-Datagrid</strong> seamlessly by adding <code class="prettyprint">data-provide=&quot;datagrid&quot;</code> attribute</p>
+
+        <!-- MARKUP-TEXTAREA -->
+        <div class="well">
+          <h5>Code</h5>
+          <pre class="prettyprint">&lt;table class=&quot;table table-bordered&quot; data-provide=&quot;datagrid&quot;&gt;
+  // ...
+&lt;/table&gt;</pre>
+        </div>
+
+        <div class="well">
+          <h5>Result</h5>
+          <table class="table table-bordered" data-provide="datagrid">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Username</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td rowspan="2">1</td>
+                <td>Mark</td>
+                <td>Otto</td>
+                <td>@mdo</td>
+              </tr>
+              <tr>
+                <td>Mark</td>
+                <td>Otto</td>
+                <td>@TwBootstrap</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td>Jacob</td>
+                <td>Thornton</td>
+                <td>@fat</td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td colspan="2">Larry the Bird</td>
+                <td>@twitter</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+    <hr/>
+
+
+    <h1>Usage</h1>
+    <p>Beside using above data-attributes, you could call it via code</p>
+    <pre class="prettyprint">$(&quot;#some-table&quot;).datagrid()</pre>
+
+    <h3>Events/Hook</h3>
+    <p>There are three main events within <strong>Bootstrap-Datagrid</strong> lifecycle : <code>onBoot</code>, <code>onCommit</code> and <code>onClean</code>. Heres an example to hook into those events via code:</p>
+
+    <div class="well">
+    <h5>Code</h5>
+    <pre class="prettyprint">$(&quot;#target-table&quot;).datagrid({
+  editable:true,
+  onBoot: function(e){
+    alert(&quot;Booting &quot;
+      +e.$table.prop(&quot;tagName&quot;).toLowerCase()
+      +&quot;#&quot;
+      +e.$table.attr(&quot;id&quot;)
+      +&quot; as Datagrid ...&quot;)
+  },
+  onCommit: function(e) {
+    alert(&quot;Commiting '&quot;+e.$editor.val()+&quot;'...&quot;)
+  },
+  onClean: function(e) {
+    alert(&quot;Clean triggered!&quot;)
+  }
+})</pre>
+        </div>
+
+        <div class="well">
+        <h5>Result</h5>
+          <table class="table" id="target-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Column heading</th>
+                <th>Column heading</th>
+                <th>Column heading</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="active">
+                <td>1</td>
+                <td>Column content</td>
+                <td>Column content</td>
+                <td>Column content</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td>Column content</td>
+                <td>Column content</td>
+                <td>Column content</td>
+              </tr>
+              <tr class="success">
+                <td>3</td>
+                <td>Column content</td>
+                <td>Column content</td>
+                <td>Column content</td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td>Column content</td>
+                <td>Column content</td>
+                <td>Column content</td>
+              </tr>
+              <tr class="info">
+                <td>5</td>
+                <td>Column content</td>
+                <td>Column content</td>
+                <td>Column content</td>
+              </tr>
+            </tbody>
+          </table>
+          <br/>
+          <button id="datagrid-triger-init" class="btn btn-primary">Transform into Bootstrap-Datagrid</button>
+        </div>
+
+
+    </section>
+    </div>
     <!-- FOOTER  -->
     <div id="footer_wrap" class="outer">
       <footer class="inner">
@@ -84,5 +180,6 @@
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
   <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/js/bootstrap.min.js"></script>
   <script src="js/bootstrap-datagrid.js"></script>
+  <script src="js/main.js"></script>
   </body>
 </html>
