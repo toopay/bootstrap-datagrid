@@ -57,15 +57,17 @@
       return this
     }
   , __commitEditorChange: function() {
-      var isChange = $.proxy(this.$editor.isChange, this.$editor.el, this.$cell)()
+      if (typeof this.$cell != 'undefined') {
+        var isChange = $.proxy(this.$editor.isChange, this.$editor.el, this.$cell)()
 
-      if (!!this.$editor.el.val() && isChange) {
-        // Call the cell mutator
-        $.proxy(this.$editor.onChange, this.$editor.el, this.$cell)()
+        if (!!this.$editor.el.val() && isChange) {
+          // Call the cell mutator
+          $.proxy(this.$editor.onChange, this.$editor.el, this.$cell)()
+        }
+
+        // Reset cell padding
+        this.$cell.css('padding', this.$cell.data('padding'))
       }
-      
-      // Reset cell padding
-      this.$cell.css('padding', this.$cell.data('padding'))
     }
   , __clearEditor: function() {
       $('.datagrid-input-container').remove()
@@ -73,9 +75,7 @@
 
   , __getCellInfo: function(e) {
       if (e.currentTarget.tagName == 'TD' || typeof this.$cell == 'undefined') {
-        if (typeof this.$cell != 'undefined') {
-          this.__commitEditorChange()
-        }
+        this.commit()
 
         // Get current cell padding
         this.$cell = $(e.currentTarget)
@@ -112,15 +112,14 @@
       inputContainer.css('left', this.$cellOffset.left.toString+'px')
       inputContainer.css('margin', 0)
 
-      input.el.css('width', '100%')
-      input.el.css('height', '100%')
-      input.el.css('top', this.$cellOffset.top.toString+'px')
-      input.el.css('left', this.$cellOffset.left.toString+'px')
+      // Call the show event of the input
+      $.proxy(input.onShow, input.el, this.$cell)()
 
+      // Display the input
       inputContainer.find('.datagrid-input-wrapper').html(input.el)
 
-      $.proxy(input.onShow, input.el, this.$cell)()
       input.el.focus()
+
       this.$editor = input
       this.$editor.el.on('keydown', $.proxy(this.__handleKeydown, this))
 
@@ -143,8 +142,8 @@
 
           case 9: // tab
             // Commit and clear the editor
-            this.__commitEditorChange()
-            this.__clearEditor()
+            this.commit()
+            this.clean()
 
             // Activate the editor on next closest sibling
             var nextCell = this.$cell.next('td')
@@ -159,8 +158,8 @@
           case 13: // enter
           case 27: // escape
             // Exit editing mode
-            this.__commitEditorChange()
-            this.__clearEditor()
+            this.commit()
+            this.clean()
 
             blocked = true
             break
@@ -178,6 +177,18 @@
 
   , boot: function() {
       this.__setListener()
+
+      return this
+    }
+  , commit: function() {
+      this.__commitEditorChange()
+      this.$options.onCommit(this)
+
+      return this
+    }
+  , clean: function() {
+      this.__clearEditor()
+      this.$options.onClean(this)
 
       return this
     }
@@ -202,10 +213,18 @@
   $.fn.datagrid.defaults = {
     /* Table Properties */
     editable:true,
+    onCommit: function(datagrid) {},
+    onClean: function(datagrid) {},
     inputs: {
       text: {
         el : $('<input type="text" class="form-control datagrid-input">'),
         onShow:function(cell) {
+          var inputPadding = parseInt(cell.data('padding'))-1
+          $(this).css('padding', inputPadding+'px')
+          $(this).css('width', '100%')
+          $(this).css('height', '100%')
+          $(this).css('top', cell.offset().top.toString+'px')
+          $(this).css('left', cell.offset().left.toString+'px')
           $(this).val(cell.text())
         },
         onChange:function(cell) {
@@ -248,6 +267,13 @@
       $('table[data-provide="datagrid"]').each(function(){
         initDatagrid($(this))
       })
+    })
+    .click(function(e) { 
+      if(!$(e.target).closest('table[data-provide="datagrid"]').length) {
+        $('table[data-provide="datagrid"]').each(function(){
+          $(this).data('datagrid').commit().clean()
+        })
+      }        
     })
 
 }(window.jQuery);
