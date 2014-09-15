@@ -53,19 +53,6 @@
 
         // Detect window resize
         $(window).on('resize', $.proxy(this.__setEditableInput, this))
-
-        // Detect outside click(s)
-        var that = this
-        $(document).click(function(e) { 
-          if(!$(e.target).closest('table').length) {
-            $('table').each(function(i,tableEl){
-              if (!!$(tableEl).data('datagrid') &&
-                  $(tableEl).find('.datagrid-input-container').length) {
-                $(tableEl).data('datagrid').commit().clean()
-              }
-            })
-          }        
-        })
       }
 
       // Re-attach datagrid data
@@ -74,17 +61,22 @@
       return this
     }
   , __commitEditorChange: function() {
-      if (typeof this.$cell != 'undefined') {
-        var isChanged = $.proxy(this.$editor.isChanged, this.$editor.el, this.$cell)()
+      var parentCell = typeof this.$editor != "undefined" ? this.$editor.el.parents('td:eq(0)') : undefined
+
+      if (!parentCell && typeof this.$cell != 'undefined') {
+        parentCell = this.$cell
+      }
+
+      if (!!parentCell && typeof this.$editor != "undefined") {
+        var isChanged = $.proxy(this.$editor.isChanged, this.$editor.el, parentCell)()
 
         if (!!this.$editor.el.val() && isChanged) {
-          console.log('here',isChanged,this.$editor.el.val(),this.$cell)
           // Call the cell mutator
-          $.proxy(this.$editor.onChange, this.$editor.el, this.$cell)()
+          $.proxy(this.$editor.onChange, this.$editor.el, parentCell)()
         }
 
         // Reset cell padding
-        this.$cell.css('padding', this.$cell.data('padding'))
+        parentCell.css('padding', parentCell.data('padding'))
       }
     }
   , __clearEditor: function() {
@@ -98,8 +90,11 @@
           typeof e.originalEvent != 'undefined' &&
           !$(e.currentTarget).is(this.$cell)) {
           // Trigger commit event for appropriate event
-          this.commit()
-          this.clean()
+          if ($(document).data('active-datagrid') != "undefined" &&
+            $(document).data('active-datagrid').$table.is(this.$table)) {
+
+            this.commit().clean()
+          } 
         } else {
           // Do not trigger full commit cycle
           this.__commitEditorChange()
@@ -108,19 +103,38 @@
         // Get current cell padding
         if (typeof $(e.currentTarget).data('editable') == "undefined" ||
           $(e.currentTarget).data('editable') == true) {
+          if (typeof $(document).data('active-datagrid') != 'undefined' &&
+            !$(document).data('active-datagrid').$table.is(this.$table) &&
+            typeof $(document).data('active-datagrid').$editor != "undefined") {
+            // Commit previous active datagrid before setting the new one
+            $(document).data('active-datagrid').commit().clean()
+          }
+
+          // Set the document active table
+          $(document).data('active-datagrid', this)
+
           this.$cell = $(e.currentTarget)
 
-          this.$cell.data('padding', this.$cell.css('padding'))
-          this.$cell.css('padding', 0)
+          if (typeof this.$cell != "undefined" && this.$cell[0].tagName == 'TD') {
+            // Reconfigure td padding
+            this.$cell.data('padding', this.$cell.css('padding'))
+            this.$cell.css('padding', 0)
+          }
         }
       }
 
-      // Set cell type, offset and dimension
-      this.$cellType = !!this.$cell.data('type') && !!this.$inputs[this.$cell.data('type')]
-                      ? this.$cell.data('type') : 'text'
-      this.$cellOffset = this.$cell.offset()
-      this.$cellDimension.width = this.$cell.width()
-      this.$cellDimension.height = this.$cell.height()
+      if (!this.$cell && !!this.$editor) {
+        this.$cell = this.$editor.el.parents('td:eq(0)')
+      }
+
+      if (!!this.$cell) {
+        // Set cell type, offset and dimension
+        this.$cellType = !!this.$cell.data('type') && !!this.$inputs[this.$cell.data('type')]
+                        ? this.$cell.data('type') : 'text'
+        this.$cellOffset = this.$cell.offset()
+        this.$cellDimension.width = this.$cell.width()
+        this.$cellDimension.height = this.$cell.height()
+      }
 
       return this
     }
@@ -136,7 +150,7 @@
       } else if (this.$cell.data('editable') == false) {
         this.commit().clean()
         e.preventDefault()
-      } else {
+      } else if (typeof this.$cell != "undefined" && this.$cell[0].tagName == 'TD') {
         var input = this.$inputs[this.$cellType]
         var inputContainer = $('<div class="datagrid-input-container"><div class="datagrid-input-wrapper"></div></div>')
 
@@ -187,10 +201,31 @@
             this.commit().clean()
 
             // Activate the editor on next closest sibling
-            var nextCell = this.$cell.next('td')
-            if (nextCell.length == 0) {
-              nextCell = this.$cell.parents('tr:eq(0)').next('tr').find('td').first()
+            var currentIndex = this.$cell.index(),
+                parentRow = this.$cell.parents('tr:eq(0)'),
+                nextRow = parentRow.next('tr'),
+                nextCell = undefined
+
+
+            // Loop through current row to get next available td
+            parentRow.find('td').each(function(i,tdEl){
+              if ($(tdEl).index() > currentIndex && 
+                (typeof $(tdEl).data('editable') == "undefined" || $(tdEl).data('editable') == true)) {
+                nextCell = $(tdEl)
+                return false
+              }
+            })
+
+            if (!nextCell && nextRow.length) {
+              // Loop through next row to get next available td
+              nextRow.find('td').each(function(i,tdEl){
+                if (typeof $(tdEl).data('editable') == "undefined" || $(tdEl).data('editable') == true) {
+                  nextCell = $(tdEl)
+                  return false
+                }
+              })
             }
+
             if (nextCell) nextCell.click()
 
             blocked = true
@@ -219,6 +254,7 @@
       if (this.$booted == false) {
         this.__setListener(force)
         this.$options.onBoot(this)
+        this.$booted = true
       }
 
       return this
@@ -308,6 +344,11 @@
       $('table[data-provide="datagrid"]').each(function(){
         initDatagrid($(this))
       })
+    }).click(function(e) { 
+      if (typeof $(this).data('active-datagrid') != 'undefined' && !$(e.target).closest('table').length) {
+        // Only check if there is an active datagrid
+        $(this).data('active-datagrid').commit().clean()
+      }
     })
 
 }(window.jQuery);

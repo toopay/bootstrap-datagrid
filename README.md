@@ -1,7 +1,5 @@
 ## Bootstrap Datagrid
 
-Minimalistic yet useul datagrid for Bootstrap.
-
 Demo and documentation on [http://toopay.github.com/bootstrap-datagrid/](http://toopay.github.com/bootstrap-datagrid/)
 
 ### LICENSE
