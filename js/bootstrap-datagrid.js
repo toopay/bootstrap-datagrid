@@ -177,6 +177,7 @@
 
   , boot: function(force) {
       this.__setListener(force)
+      this.$options.onBoot(this)
 
       return this
     }
@@ -213,6 +214,7 @@
   $.fn.datagrid.defaults = {
     /* Table Properties */
     editable:true,
+    onBoot: function(datagrid) {},
     onCommit: function(datagrid) {},
     onClean: function(datagrid) {},
     inputs: {
